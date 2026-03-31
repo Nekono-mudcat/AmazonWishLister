@@ -1,0 +1,49 @@
+(function() {
+    let results = [];
+    let seenLinks = new Set(); // 重複チェック用のセット
+    
+    // ウィッシュリストのアイテムを取得
+    let items = document.querySelectorAll('.a-list-item, [id^="item_"]');
+
+    items.forEach(item => {
+        let text = item.innerText || "";
+        // 「%」が含まれている場合のみ処理
+        if (text.includes('%') || text.includes('％')) {
+            let linkEl = item.querySelector('a[id^="itemName"]') || item.querySelector('a.a-link-normal:not(.a-text-normal)');
+            
+            if (linkEl) {
+                let title = linkEl.innerText.trim();
+                let href = linkEl.getAttribute('href');
+                
+                if (title && href) {
+                    // URLをきれいにする（?以降をカット）
+                    let cleanLink = href.startsWith('http') ? href.split('?')[0] : "https://www.amazon.co.jp" + href.split('?')[0];
+                    
+                    // すでに登録済みのURLでない場合のみ追加
+                    if (!seenLinks.has(cleanLink)) {
+                        results.push(`${title}\n${cleanLink}`);
+                        seenLinks.add(cleanLink); // 登録済みとしてマーク
+                    }
+                }
+            }
+        }
+    });
+
+    if (results.length > 0) {
+        let output = results.join('\n\n');
+        let blob = new Blob([output], {type: 'text/plain'});
+        let a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'amazon_sale_list.txt';
+        a.click();
+        
+        let msg = `完了しました。重複を除いて ${results.length} 件保存しました。`;
+        let alertDiv = document.createElement('div');
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.innerText = msg;
+        document.body.appendChild(alertDiv);
+        alert(msg);
+    } else {
+        alert("割引商品が見つかりませんでした。");
+    }
+})();
